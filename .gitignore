@@ -1,0 +1,8 @@
+env
+#readme.md de eklenmesi .env dosyasına eklenmesi gereken satırlar belirtilmiştir.
+.env
+
+__pycache__/
+*.pyc
+
+.venv/
