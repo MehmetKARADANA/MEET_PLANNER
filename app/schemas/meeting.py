@@ -17,4 +17,4 @@ class MeetingRead(MeetingBase):
     participant_ids: List[int] = []
 
     class Config:
-        orm_mode = True
+        from_attributes=True

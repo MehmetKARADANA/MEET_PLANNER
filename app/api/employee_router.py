@@ -1,30 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.schemas.employee import EmployeeCreate, EmployeeRead
-from app.repositories.employee_repo import EmployeeRepository
 from app.services.employee_service import EmployeeService
-from app.config import SessionLocal
 from fastapi import Path
-from app.dependencies import get_db
+from app.core.dependencies import get_employee_service, get_current_user
+from app.core.dependencies import require_role
 
 
-router = APIRouter(prefix="/employees", tags=["Employees"])
+router = APIRouter(prefix="/employees", tags=["Employees"],dependencies=[Depends(get_current_user)])
 
 
-def get_employee_service(db: Session = Depends(get_db)):
-    repo = EmployeeRepository(db)
-    service = EmployeeService(repo)
-    return service
-
-@router.post("/", response_model=EmployeeRead, status_code=status.HTTP_201_CREATED)
-def create_employee(employee_in: EmployeeCreate, service: EmployeeService = Depends(get_employee_service)):
-    try:
-        employee = service.create_employee(employee_in)
-        return employee
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-@router.get("/", response_model=list[EmployeeRead])
+@router.get("/", response_model=list[EmployeeRead], dependencies=[Depends(require_role("EMPLOYEE","ADMIN"))])
 def list_employees(service: EmployeeService = Depends(get_employee_service)):
     return service.get_all_employees()
 
@@ -33,8 +19,14 @@ def list_employees(service: EmployeeService = Depends(get_employee_service)):
 def update_employee(
     employee_id: int = Path(..., description="Employee ID"),
     employee_in: EmployeeCreate = ...,
-    service: EmployeeService = Depends(get_employee_service)
+    service: EmployeeService = Depends(get_employee_service),
+    current_user = Depends(get_current_user)
 ):
+    if current_user.id != employee_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own profile"
+        )
     try:
         return service.update_employee(employee_id, employee_in)
     except ValueError as e:
@@ -44,8 +36,14 @@ def update_employee(
 @router.delete("/{employee_id}", response_model=EmployeeRead)
 def delete_employee(
     employee_id: int = Path(..., description="Employee ID"),
-    service: EmployeeService = Depends(get_employee_service)
+    service: EmployeeService = Depends(get_employee_service),
+    current_user = Depends(get_current_user)
 ):
+    if current_user.id != employee_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own profile"
+        )
     try:
         return service.delete_employee(employee_id)
     except ValueError as e:

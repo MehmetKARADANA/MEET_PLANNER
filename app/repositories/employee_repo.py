@@ -9,7 +9,11 @@ class EmployeeRepository:
         return self.db.query(Employee).filter(Employee.email == email).first()
 
     def create(self, employee_in):
-        db_employee = Employee(**employee_in.dict())
+        if isinstance(employee_in, dict):
+           db_employee = Employee(**employee_in)
+        else:
+           db_employee = Employee(**employee_in.dict())
+       # db_employee = Employee(**employee_in.dict())
         self.db.add(db_employee)
         self.db.commit()
         self.db.refresh(db_employee)

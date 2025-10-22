@@ -37,7 +37,6 @@ class MeetingService:
         return [self.serialize_meeting(m) for m in meetings]
 
     def serialize_meeting(self, meeting):
-        """Meeting objesini JSON uyumlu dict’e çevirir"""
         return {
             "id": meeting.id,
             "title": meeting.title,

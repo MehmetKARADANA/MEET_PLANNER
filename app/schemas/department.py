@@ -12,4 +12,4 @@ class DepartmentRead(DepartmentBase):
     id: int
     employees: Optional[List[EmployeeRead]] = []
     class Config:
-        orm_mode = True
+        from_attributes=True

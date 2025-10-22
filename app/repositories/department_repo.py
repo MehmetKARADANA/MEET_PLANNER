@@ -17,3 +17,6 @@ class DepartmentRepository:
         self.db.commit()
         self.db.refresh(db_dep)
         return db_dep
+    
+    def get_by_name(self, name: str):
+        return self.db.query(Department).filter(Department.name == name).first()
