@@ -1,6 +1,7 @@
 from app.repositories.meeting_repo import MeetingRepository
 from app.repositories.employee_repo import EmployeeRepository
 from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
 
 
 
@@ -10,31 +11,136 @@ class MeetingService:
         self.employee_repo = employee_repo
 
     def create_meeting(self, meeting_in):
-        participants = []
-        for emp_id in meeting_in.participant_ids:
+        try:
+            participants = []
+            for emp_id in meeting_in.participant_ids:
+                emp = self.employee_repo.get_by_id(emp_id)
+                if not emp:
+                    raise HTTPException(status_code=404, detail=f"Employee with id {emp_id} not found")
+
+                # Çakışma kontrolü
+                for m in emp.meetings:
+                    if not (meeting_in.end_time <= m.start_time or meeting_in.start_time >= m.end_time):
+                        raise HTTPException(status_code=409, detail=f"Employee {emp.first_name} {emp.last_name} has a conflicting meeting")
+                participants.append(emp)
+
+            organizer = self.employee_repo.get_by_id(meeting_in.organizer_id)
+            if not organizer:
+                raise HTTPException(status_code=404, detail="Organizer not found")
+            participants.append(organizer)
+
+            meeting = self.meeting_repo.create(meeting_in, participants)
+            return self.serialize_meeting(meeting)
+        
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+    def get_all_meetings(self):
+        try:
+            meetings = self.meeting_repo.get_all()
+            return [self.serialize_meeting(m) for m in meetings]
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+    def get_meeting(self, meeting_id: int):
+        try:
+            m = self.meeting_repo.get_by_id(meeting_id)
+            if not m:
+                raise HTTPException(status_code=404, detail="Meeting not found")
+            return self.serialize_meeting(m)
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+    def update_meeting(self, meeting_id: int, meeting_in ):
+        try:
+            meeting = self.meeting_repo.get_by_id(meeting_id)
+            if not meeting:
+                raise HTTPException(status_code=404, detail="Meeting not found")
+
+            participants = meeting.participants 
+            if meeting_in.participant_ids is not None:
+                participants = []
+                for emp_id in meeting_in.participant_ids:
+                    emp = self.employee_repo.get_by_id(emp_id)
+                    if not emp:
+                        raise HTTPException(status_code=404, detail=f"Employee with id {emp_id} not found")
+              
+                    for m in emp.meetings:
+                        if m.id == meeting_id:
+                            continue
+                        if meeting_in.start_time and meeting_in.end_time:
+                            if not (meeting_in.end_time <= m.start_time or meeting_in.start_time >= m.end_time):
+                                raise HTTPException(
+                                    status_code=409,
+                                    detail=f"Employee {emp.first_name} {emp.last_name} has a conflicting meeting"
+                                )
+                    participants.append(emp)
+
+            if meeting_in.title is not None:
+                meeting.title = meeting_in.title
+            if meeting_in.start_time is not None:
+                meeting.start_time = meeting_in.start_time
+            if meeting_in.end_time is not None:
+                meeting.end_time = meeting_in.end_time
+
+            meeting.participants = participants
+
+            self.meeting_repo.db.commit()
+            self.meeting_repo.db.refresh(meeting)
+            return self.serialize_meeting(meeting)
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+    def delete_meeting(self, meeting_id: int):
+        try:
+            meeting = self.meeting_repo.delete(meeting_id)
+            if not meeting:
+                raise HTTPException(status_code=404, detail="Meeting not found")
+            return self.serialize_meeting(meeting)
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+    def add_participant(self, meeting_id: int, emp_id: int):
+        try:
             emp = self.employee_repo.get_by_id(emp_id)
             if not emp:
-                raise ValueError(f"Employee with id {emp_id} not found")
-            # Çakışma kontrolü
-            for m in emp.meetings:
-                if not (meeting_in.end_time <= m.start_time or meeting_in.start_time >= m.end_time):
-                    raise ValueError(f"Employee {emp.first_name} {emp.last_name} has a conflicting meeting")
-            participants.append(emp)
+                raise HTTPException(status_code=404, detail="Employee not found")
 
-        organizer = self.employee_repo.get_by_id(meeting_in.organizer_id)
-        if not organizer:
-            raise ValueError("Organizer not found")
-        participants.append(organizer)
+            meeting = self.meeting_repo.add_participant(meeting_id, emp)
+            if not meeting:
+                raise HTTPException(status_code=404, detail="Meeting not found")
+            return self.serialize_meeting(meeting)
+        
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-       # return self.meeting_repo.create(meeting_in, participants)
-        meeting = self.meeting_repo.create(meeting_in, participants)
-        return self.serialize_meeting(meeting)
+    def remove_participant(self, meeting_id: int, emp_id: int):
+        try:
+            emp = self.employee_repo.get_by_id(emp_id)
+            if not emp:
+                raise HTTPException(status_code=404, detail="Employee not found")
 
-   # def get_all_meetings(self):
-   #     return self.meeting_repo.get_all()
-    def get_all_meetings(self):
-        meetings = self.meeting_repo.get_all()
-        return [self.serialize_meeting(m) for m in meetings]
+            meeting = self.meeting_repo.remove_participant(meeting_id, emp)
+            if not meeting:
+                raise HTTPException(status_code=404, detail="Meeting not found")
+            return self.serialize_meeting(meeting)
+        
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
     def serialize_meeting(self, meeting):
         return {

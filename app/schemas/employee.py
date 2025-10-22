@@ -31,3 +31,9 @@ class EmployeeRead(EmployeeBase):
 
     class Config:
         from_attributes=True
+
+class EmployeeUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    department_id: Optional[int] = None
+    role: Optional[str] = None

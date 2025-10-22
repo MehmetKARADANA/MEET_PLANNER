@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel ,Field
 from datetime import datetime
 from typing import List, Optional
 
@@ -18,3 +18,19 @@ class MeetingRead(MeetingBase):
 
     class Config:
         from_attributes=True
+
+class ParticipantUpdate(BaseModel):
+    meeting_id: int
+    emp_id: int
+
+class MeetingUpdate(BaseModel):
+    id: int
+    title: Optional[str] = Field(None, description="Toplantı başlığı")
+    start_time: Optional[datetime] = Field(None, description="Toplantı başlangıç zamanı")
+    end_time: Optional[datetime] = Field(None, description="Toplantı bitiş zamanı")
+    participant_ids: Optional[List[int]] = Field(None, description="Toplantıya katılacak kullanıcıların ID'leri")
+
+    class Config:
+        from_attributes = True
+
+

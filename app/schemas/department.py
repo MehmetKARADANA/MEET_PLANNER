@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from app.schemas.employee import EmployeeRead
 
+
 class DepartmentBase(BaseModel):
     name: str
 
@@ -13,3 +14,10 @@ class DepartmentRead(DepartmentBase):
     employees: Optional[List[EmployeeRead]] = []
     class Config:
         from_attributes=True
+class DepartmentUpdateRequest(BaseModel):
+    id: int
+    name: str
+
+class DepartmentDeleteRequest(BaseModel):
+    id: int
+

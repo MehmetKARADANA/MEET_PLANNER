@@ -24,3 +24,53 @@ class MeetingRepository:
 
     def get_all(self):
         return self.db.query(Meeting).all()
+    
+    def update(self, meeting_id: int, meeting_in, participants=None):
+        db_meeting = self.get_by_id(meeting_id)
+        if not db_meeting:
+            return None
+
+        db_meeting.title = meeting_in.title
+        db_meeting.start_time = meeting_in.start_time
+        db_meeting.end_time = meeting_in.end_time
+        db_meeting.organizer_id = meeting_in.organizer_id
+
+        if participants is not None:
+            db_meeting.participants = participants
+
+        self.db.commit()
+        self.db.refresh(db_meeting)
+        return db_meeting
+
+    def delete(self, meeting_id: int):
+        db_meeting = self.get_by_id(meeting_id)
+        if not db_meeting:
+            return None
+
+        self.db.delete(db_meeting)
+        self.db.commit()
+        return db_meeting
+
+    def add_participant(self, meeting_id: int, participant: Employee):
+        db_meeting = self.get_by_id(meeting_id)
+        if not db_meeting:
+            return None
+
+        if participant not in db_meeting.participants:
+            db_meeting.participants.append(participant)
+            self.db.commit()
+            self.db.refresh(db_meeting)
+
+        return db_meeting
+
+    def remove_participant(self, meeting_id: int, participant: Employee):
+        db_meeting = self.get_by_id(meeting_id)
+        if not db_meeting:
+            return None
+
+        if participant in db_meeting.participants:
+            db_meeting.participants.remove(participant)
+            self.db.commit()
+            self.db.refresh(db_meeting)
+
+        return db_meeting

@@ -8,6 +8,9 @@ class DepartmentRepository:
     def get_by_id(self, department_id: int):
         return self.db.query(Department).filter(Department.id == department_id).first()
 
+    def get_by_name(self, name: str):
+        return self.db.query(Department).filter(Department.name == name).first()
+
     def get_all(self):
         return self.db.query(Department).all()
 
@@ -17,6 +20,16 @@ class DepartmentRepository:
         self.db.commit()
         self.db.refresh(db_dep)
         return db_dep
-    
-    def get_by_name(self, name: str):
-        return self.db.query(Department).filter(Department.name == name).first()
+
+    def update(self, department: Department, department_in):
+        department.name = department_in.name
+        self.db.commit()
+        self.db.refresh(department)
+        return department
+
+    def delete(self, department: Department):
+        for emp in department.employees:
+            emp.department_id = None
+        self.db.delete(department)
+        self.db.commit()
+        return department
