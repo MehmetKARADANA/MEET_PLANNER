@@ -13,7 +13,6 @@ from fastapi import Header
 from dotenv import load_dotenv
 import os
 
-
 load_dotenv() 
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -73,3 +72,4 @@ def get_department_service(db: Session = Depends(get_db)):
     repo = DepartmentRepository(db)
     service = DepartmentService(repo)
     return service
+

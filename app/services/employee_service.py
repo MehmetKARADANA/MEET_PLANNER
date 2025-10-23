@@ -1,4 +1,14 @@
 from fastapi import HTTPException, status
+from email_validator import validate_email, EmailNotValidError
+
+
+def is_valid_email(email: str) -> bool:
+    try:
+        validate_email(email, check_deliverability=True)
+        return True
+    except EmailNotValidError:
+        return False
+
 
 class EmployeeService:
     def __init__(self, repo):
@@ -6,6 +16,8 @@ class EmployeeService:
 
     def create_employee(self, employee_in):
         try:
+            if not is_valid_email(employee_in["email"]):
+                raise HTTPException(status_code=400, detail="Invalid email address.")
             email = employee_in.email if hasattr(employee_in, "email") else employee_in.get("email")
             existing = self.repo.get_by_email(email)
             if existing:

@@ -23,25 +23,17 @@ class MeetingRepository:
         self.db.refresh(db_meeting)
         return db_meeting
 
+    def update(self, meeting: Meeting):
+        """Meeting objesini güncelle"""
+        self.db.commit()
+        self.db.refresh(meeting)
+        return meeting
+
+
     def get_all(self):
         return self.db.query(Meeting).all()
     
-    def update(self, meeting_id: int, meeting_in, participants=None):
-        db_meeting = self.get_by_id(meeting_id)
-        if not db_meeting:
-            return None
-
-        db_meeting.title = meeting_in.title
-        db_meeting.start_time = meeting_in.start_time
-        db_meeting.end_time = meeting_in.end_time
-        db_meeting.organizer_id = meeting_in.organizer_id
-
-        if participants is not None:
-            db_meeting.participants = participants
-
-        self.db.commit()
-        self.db.refresh(db_meeting)
-        return db_meeting
+   
 
     def delete(self, meeting_id: int):
         db_meeting = self.get_by_id(meeting_id)
@@ -82,6 +74,19 @@ class MeetingRepository:
             raise ValueError(f"Employee with id {employee_id} not found")
 
         for meeting in employee.meetings:
+            if not (end_time <= meeting.start_time or start_time >= meeting.end_time):
+                return True
+        return False
+    
+    def check_conflict_for_employee(self, employee_id: int, start_time: datetime, end_time: datetime, exclude_meeting_id: int = None) -> bool:
+        """Çalışanın aynı saatlerde başka bir toplantısı var mı kontrol eder."""
+        employee = self.db.query(Employee).filter(Employee.id == employee_id).first()
+        if not employee:
+            raise ValueError(f"Employee with id {employee_id} not found")
+
+        for meeting in employee.meetings:
+            if exclude_meeting_id and meeting.id == exclude_meeting_id:
+                continue
             if not (end_time <= meeting.start_time or start_time >= meeting.end_time):
                 return True
         return False
