@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,status
 from sqlalchemy.orm import Session
 from app.schemas.department import DepartmentCreate, DepartmentRead,DepartmentDeleteRequest,DepartmentUpdateRequest
 from app.services.department_service import DepartmentService
@@ -8,7 +8,7 @@ from app.core.dependencies import require_role
 router = APIRouter(prefix="/departments", tags=["Departments"],dependencies=[Depends(get_current_user)])
 
 
-@router.post("/", response_model=DepartmentRead, dependencies=[Depends(require_role("ADMIN"))])
+@router.post("/", response_model=DepartmentRead, dependencies=[Depends(require_role("ADMIN"))],status_code=status.HTTP_201_CREATED)
 def create_department(department_in: DepartmentCreate, service: DepartmentService = Depends(get_department_service)):
     return service.create_department(department_in)
 

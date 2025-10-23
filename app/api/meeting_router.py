@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.schemas.meeting import MeetingCreate, MeetingRead,ParticipantUpdate,MeetingUpdate,MeetingDelete,AvailabilityRequest
 from app.repositories.meeting_repo import MeetingRepository
@@ -11,7 +11,7 @@ from datetime import datetime
 router = APIRouter(prefix="/meetings", tags=["Meetings"],dependencies=[Depends(get_current_user)])
 
 
-@router.post("/", response_model=MeetingRead)
+@router.post("/", response_model=MeetingRead,status_code=status.HTTP_201_CREATED)
 def create_meeting(meeting_in: MeetingCreate, service: MeetingService = Depends(get_meeting_service)):
     try:
         return service.create_meeting(meeting_in)

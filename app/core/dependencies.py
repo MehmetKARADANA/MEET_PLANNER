@@ -1,7 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from app.core.security import SECRET_KEY, ALGORITHM
 from app.repositories.employee_repo import EmployeeRepository
 from app.config import SessionLocal
 from sqlalchemy.orm import Session
@@ -11,6 +10,14 @@ from app.services.employee_service import EmployeeService
 from app.services.meeting_service import MeetingService      
 from app.services.department_service import DepartmentService
 from fastapi import Header
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv() 
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 
 def require_role(*allowed_roles: str):
     def role_checker(current_user=Depends(get_current_user)):
