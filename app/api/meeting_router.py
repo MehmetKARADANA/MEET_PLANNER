@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.schemas.meeting import MeetingCreate, MeetingRead,ParticipantUpdate,MeetingUpdate
+from app.schemas.meeting import MeetingCreate, MeetingRead,ParticipantUpdate,MeetingUpdate,MeetingDelete,AvailabilityRequest
 from app.repositories.meeting_repo import MeetingRepository
 from app.repositories.employee_repo import EmployeeRepository
 from app.services.meeting_service import MeetingService
@@ -27,7 +27,8 @@ def update_meeting(meeting_in: MeetingUpdate, service: MeetingService = Depends(
     return service.update_meeting(meeting_in.id, meeting_in)
 
 @router.delete("/", response_model=MeetingCreate)
-def delete_meeting(meeting_id: int, service: MeetingService = Depends(get_meeting_service)):
+def delete_meeting(meeting_in: MeetingDelete, service: MeetingService = Depends(get_meeting_service)):
+    meeting_id=meeting_in.id
     return service.delete_meeting(meeting_id)
 
 
@@ -39,15 +40,12 @@ def add_participant(data: ParticipantUpdate, service: MeetingService = Depends(g
 def remove_participant(data: ParticipantUpdate, service: MeetingService = Depends(get_meeting_service)):
     return service.remove_participant(data.meeting_id, data.emp_id)
 
-@router.get("/availability/{employee_id}")
+@router.get("/availability/")
 def check_availability(
-    employee_id: int,
-    start_time: datetime = Query(..., description="Başlangıç zamanı, ISO formatında"),
-    end_time: datetime = Query(..., description="Bitiş zamanı, ISO formatında"),
+    request: AvailabilityRequest,
     service: MeetingService = Depends(get_meeting_service)
 ):
-    try:
-        available = service.check_employee_availability(employee_id, start_time, end_time)
-        return {"employee_id": employee_id, "available": available}
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    available = service.check_employee_availability(
+        request.employee_id, request.start_time, request.end_time
+    )
+    return {"employee_id": request.employee_id, "available": available}

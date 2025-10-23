@@ -1,3 +1,4 @@
+from datetime import datetime
 from app.repositories.meeting_repo import MeetingRepository
 from app.repositories.employee_repo import EmployeeRepository
 from sqlalchemy.orm import Session
@@ -142,6 +143,16 @@ class MeetingService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+
+    def check_employee_availability(self, employee_id: int, start_time: datetime, end_time: datetime) -> bool:
+        try:
+            has_conflict = self.meeting_repo.has_conflict(employee_id, start_time, end_time)
+            return not has_conflict
+        except ValueError as ve:
+            raise HTTPException(status_code=404, detail=str(ve))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        
     def serialize_meeting(self, meeting):
         return {
             "id": meeting.id,

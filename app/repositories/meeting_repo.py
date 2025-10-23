@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.meeting import Meeting
 from app.models.employee import Employee
@@ -74,3 +75,13 @@ class MeetingRepository:
             self.db.refresh(db_meeting)
 
         return db_meeting
+    
+    def has_conflict(self, employee_id: int, start_time: datetime, end_time: datetime) -> bool:
+        employee = self.db.query(Employee).filter(Employee.id == employee_id).first()
+        if not employee:
+            raise ValueError(f"Employee with id {employee_id} not found")
+
+        for meeting in employee.meetings:
+            if not (end_time <= meeting.start_time or start_time >= meeting.end_time):
+                return True
+        return False

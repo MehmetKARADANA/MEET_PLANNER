@@ -23,6 +23,9 @@ class ParticipantUpdate(BaseModel):
     meeting_id: int
     emp_id: int
 
+class MeetingDelete(BaseModel):
+    id: int
+
 class MeetingUpdate(BaseModel):
     id: int
     title: Optional[str] = Field(None, description="Toplantı başlığı")
@@ -32,5 +35,10 @@ class MeetingUpdate(BaseModel):
 
     class Config:
         from_attributes = True
+
+class AvailabilityRequest(BaseModel):
+    employee_id: int = Field(..., description="Çalışan ID'si")
+    start_time: datetime = Field(..., description="Toplantı başlangıç zamanı")
+    end_time: datetime = Field(..., description="Toplantı bitiş zamanı")
 
 
