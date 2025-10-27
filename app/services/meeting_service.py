@@ -61,7 +61,7 @@ class MeetingService:
             all_participant_ids = list(set(meeting_in.participant_ids + [meeting_in.organizer_id]))
             
             self._check_conflicts_for_employees(all_participant_ids, meeting_in.start_time, meeting_in.end_time)
-
+                                                         
             participants = []
             for emp_id in all_participant_ids:
                 emp = self.employee_repo.get_by_id(emp_id)
